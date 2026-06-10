@@ -1,0 +1,13 @@
+{
+  "name": "trivela",
+  "version": "1.0.0",
+  "description": "A free-kick mini-game that teaches the Magnus effect. Vanilla web component, no deps.",
+  "license": "MIT",
+  "author": "Chitransh Saxena",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node test/physics.test.js",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  }
+}
