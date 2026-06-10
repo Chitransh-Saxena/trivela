@@ -167,6 +167,8 @@
       this.elStreak = q(".streak"); this.elBalls = q(".balls"); this.elPips = q(".pips");
       this.elHint = q(".aimhint"); this.elBanner = q(".banner"); this.elVcurl = q(".vcurl"); this.elVpow = q(".vpow");
       this._bindUI();
+      this.demo = this.hasAttribute("demo");                       // small profile-page demo
+      this.startLevel = this.hasAttribute("level") ? clamp(+this.getAttribute("level") || 0, 0, LEVELS.length - 1) : (this.demo ? 1 : 0);
       this._newGame(); this._refreshPalette();
       this._ro = new ResizeObserver(() => this._resize()); this._ro.observe(this.pitchEl);
       this._io = new IntersectionObserver((es) => { es.some((e) => e.isIntersecting) ? this._start() : this._stop(); }, { threshold: 0.02 });
@@ -206,7 +208,7 @@
     _proj(x, y, z) { var v = this.view, t = clamp(z / D, 0, 1), scl = lerp(v.nearScale, v.farScale, t), gy = lerp(v.gNearY, v.gFarY, t); return { sx: v.cx + x * scl, sy: gy - y * scl, gy: gy, scl: scl }; }
     _unproj(px, py) { var v = this.view; return { x: (px - v.cx) / v.farScale, y: (v.gFarY - py) / v.farScale }; }
 
-    _newGame() { this.levelIdx = 0; this.score = 0; this.streak = 0; this.curl = 0; this.power = 0.7; this._loadLevel(0); }
+    _newGame() { this.score = 0; this.streak = 0; this.curl = 0; this.power = 0.7; this._loadLevel(this.startLevel || 0); }
     _loadLevel(i) {
       this.levelIdx = clamp(i, 0, LEVELS.length - 1); this.level = LEVELS[this.levelIdx];
       this.world = { D: D, goalHalf: GOAL_HALF, goalHeight: GOAL_H, wall: this.level.wall, keeper: this.level.keeper };
@@ -283,15 +285,15 @@
     }
     _syncHud() {
       if (!this.elLvl) return;
-      this.elLvl.textContent = "LEVEL " + (this.levelIdx + 1) + "/" + LEVELS.length;
+      this.elLvl.textContent = this.demo ? "DEMO" : "LEVEL " + (this.levelIdx + 1) + "/" + LEVELS.length;
       this.elLvlName.textContent = this.level.name; this.elScore.textContent = this.score;
       if (this.elBest) this.elBest.textContent = this.best;
       this.elStreak.textContent = this.streak > 1 ? "▲×" + this.streak : "";
       var b = "", i; for (i = 0; i < BALLS; i++) b += i < this.ballsLeft ? "●" : "○"; this.elBalls.textContent = b;
-      if (this.elPips) { var pp = "", j; for (j = 0; j < LEVELS.length; j++) pp += j <= this.levelIdx ? "●" : "○"; this.elPips.textContent = pp; }
+      if (this.elPips) { if (this.demo) { this.elPips.textContent = ""; } else { var pp = "", j; for (j = 0; j < LEVELS.length; j++) pp += j <= this.levelIdx ? "●" : "○"; this.elPips.textContent = pp; } }
     }
     _announceLevel() {
-      if (!this.elBanner) return;
+      if (!this.elBanner || this.demo) return;
       this.elBanner.innerHTML = '<span class="bg">LEVEL ' + (this.levelIdx + 1) + ' / ' + LEVELS.length + '</span><span class="bs">' + this.level.name + ' — ' + this.level.sub + '</span>';
       this.elBanner.classList.add("show"); clearTimeout(this._bannerT);
       this._bannerT = setTimeout(() => { if (this.elBanner) this.elBanner.classList.remove("show"); }, 1900);
@@ -328,7 +330,7 @@
       this.score += pts; if (this.score > this.best) { this.best = this.score; try { localStorage.setItem("trivela_best", String(this.best)); } catch (e) {} }
       this.callout = { msg: msg, col: col, t: 0, big: good }; this.ballsLeft--; this._syncHud();
     }
-    _next() { this.ballsLeft <= 0 ? this._loadLevel((this.levelIdx + 1) % LEVELS.length) : this._ready(); }
+    _next() { if (this.ballsLeft > 0) return this._ready(); this._loadLevel(this.demo ? this.levelIdx : (this.levelIdx + 1) % LEVELS.length); }
 
     /* ---------- loop ---------- */
     _start() { if (this._running) return; this._running = true; this._lastT = 0; this._resize(); this._raf = requestAnimationFrame((t) => this._frame(t)); }
