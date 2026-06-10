@@ -192,12 +192,14 @@
     }
 
     _resize() {
-      var r = this.pitchEl.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return;
+      var r = this.pitchEl.getBoundingClientRect();
+      var W = r.width || this.pitchEl.clientWidth, H = r.height || this.pitchEl.clientHeight;
+      if (W < 2 || H < 2) return;
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
-      this.W = r.width; this.H = r.height;
-      this.canvas.width = Math.round(this.W * dpr); this.canvas.height = Math.round(this.H * dpr);
+      this.W = W; this.H = H;
+      this.canvas.width = Math.round(W * dpr); this.canvas.height = Math.round(H * dpr);
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      var W = this.W, H = this.H, fs = (0.46 * W) / (2 * GOAL_HALF);
+      var fs = (0.46 * W) / (2 * GOAL_HALF);
       this.view = { cx: W / 2, farScale: fs, nearScale: fs * 2.5, gFarY: H * 0.4, gNearY: H * 0.97 };
       this._dirty = true;
     }

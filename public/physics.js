@@ -134,26 +134,32 @@
   /* numerically solve launch angles so a SPIN-FREE shot would strike `target`
      (x,y at the goal plane). The real shot then adds spin and curls off this
      aim line — which is the whole skill. */
-  function solveAimAngles(target, v0, world) {
+  function solveAimAngles(target, v0, world, spin) {
     world = Object.assign({}, WORLD, world);
+    spin = spin || 0;
+    // Solve on an OPEN field (no wall/keeper) so collisions can't corrupt the aim,
+    // and INCLUDE the spin so the curled ball actually lands on the target.
+    const open = { D: world.D, goalHalf: world.goalHalf, goalHeight: world.goalHeight };
     let yaw = Math.atan2(target.x, world.D);
     let elev = Math.atan2(target.y + 0.6, world.D) + 0.14;
-    for (let i = 0; i < 10; i++) {
-      const sim = simulate(makeLaunch(v0, yaw, elev, 0), world);
+    for (let i = 0; i < 12; i++) {
+      const sim = simulate(makeLaunch(v0, yaw, elev, spin), open);
       const c = findGoalCrossing(sim.path, world.D);
       const ex = target.x - c.x, ey = target.y - c.y;
       if (Math.abs(ex) < 0.02 && Math.abs(ey) < 0.02) break;
       yaw += Math.atan2(ex, world.D) * 0.95;
       elev += (ey / world.D) * 0.95;
-      yaw = clamp(yaw, -0.9, 0.9);
+      yaw = clamp(yaw, -0.95, 0.95);
       elev = clamp(elev, -0.15, 1.3);
     }
     return { yaw, elev };
   }
 
-  /* convenience: aim at a goal-plane target with given power + spin */
+  /* Aim at a goal-plane target with given power + spin. The ball LANDS on the
+     target (solved on an open field); the real shot below may still meet a
+     wall or keeper — which is the whole game on later levels. */
   function simulateAimed(target, v0, spin, world) {
-    const { yaw, elev } = solveAimAngles(target, v0, world);
+    const { yaw, elev } = solveAimAngles(target, v0, world, spin);
     return simulate(makeLaunch(v0, yaw, elev, spin), world);
   }
 
